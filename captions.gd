@@ -8,68 +8,39 @@ func prepare_track(animation : Animation, label : RichTextLabel, update_mode : A
 	
 	return track_index
 
-func generate_animation_WORDS(data, caption_fields):
+func add_segment_word_by_word_to_track(written : String, caption, animation : Animation, track_index : int, end_override := 0.0) -> String:
+	var text := caption["text"] as String # The text being displayed.
+	var start := caption["start"] as float # The starting keyframe in seconds.
+	var end := caption["end"] as float if not end_override else end_override # The ending keyframe in seconds.
+	var words := text.split(" ") # Get every word.
+	var segment_duration := end - start
+	var word_duration = segment_duration / words.size()
+	var currentTime = start
+	for word in words:
+		currentTime += word_duration
+		written += word + " "
+		animation.track_insert_key(track_index, currentTime, written)
+		
+	return written
+
+func generate_animation_WORDS(data : Dictionary, caption_fields):
 	var animation := Animation.new()
 	var track_index := prepare_track(animation, data["Label"], Animation.UPDATE_DISCRETE)
 	var last_field = caption_fields.pop_back()
 	var written := ""
-	var text := ""
 	for caption in caption_fields:
-		text = caption["text"] # The text being displayed.
-		var start = caption["start"] # The starting keyframe in seconds.
-		var end = caption["end"] # The ending keyframe in seconds.
-		if text.find(" ") != -1: # Check for whitespaces.
-			var words := text.split(" ") # Get every word.
-			var midpoint = end - start
-			var WPS = midpoint / words.size()
-			var wordFrequency = WPS
-			var currentTime = start
-			for word in words:
-				currentTime += wordFrequency
-				written += word + " "
-				animation.track_insert_key(track_index, currentTime, written)
-		else: # Return the single word.
-			written += text + " "
-			animation.track_insert_key(track_index, end, written)
-
-	text = last_field["text"]
-	written += " "
+		written = add_segment_word_by_word_to_track(written, caption, animation, track_index)
 	
-	var duration
-	
-	if "Duration" in data: # Check whether a custom duration was provided.
-		duration = data["Duration"]
-	else:
-		duration = last_field["end"]
-
-	if text.find(" ") != -1:
-		var start = last_field["start"]
-		var end = duration
-		var words = text.split(" ") # Get every word.
-		var midpoint = end - start
-		var WPS = midpoint / words.size()
-		var wordFrequency = WPS
-		var currentTime = start
-		for word in words:
-			currentTime += wordFrequency
-			written += word + " "
-			animation.track_insert_key(track_index, currentTime, written)
-	else:
-		animation.track_insert_key(track_index, duration, written)
+	var duration : float = data.get("Duration", last_field["end"]) 
+	written = add_segment_word_by_word_to_track(written, last_field, animation, track_index, duration)
 	
 	animation.length = duration
 	
-	var animPlayer
-	
 	if "AnimationPlayer" in data and "Name" in data: # Adds the named animation to the provded animation player.
-		animPlayer = data["AnimationPlayer"]
-		animPlayer.get_animation_library("").add_animation(data["Name"], animation)
+		data["AnimationPlayer"].get_animation_library("").add_animation(data["Name"], animation)
 		return true
 	else: # Returns the animation.
 		return animation
-	
-
-
 
 func generate_animation_LETTERS(data, caption_fields):
 	var animation = Animation.new()
