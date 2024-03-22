@@ -1,21 +1,25 @@
 extends Node
 
+func prepare_track(animation : Animation, label : RichTextLabel, update_mode : Animation.UpdateMode) -> int:
+	var track_index := animation.add_track(Animation.TYPE_VALUE)
+	var nodePath = NodePath(label.owner.get_path_to(label))
+	animation.value_track_set_update_mode(track_index, update_mode)
+	animation.track_set_path(track_index, nodePath.get_concatenated_names() + ":text")
+	
+	return track_index
 
 func generate_animation_WORDS(data, caption_fields):
-	var animation = Animation.new()
-	var track_index = animation.add_track(Animation.TYPE_VALUE)
-	var nodePath = NodePath(data["Label"].owner.get_path_to(data["Label"]))
-	animation.value_track_set_update_mode(track_index, Animation.UPDATE_DISCRETE)
-	animation.track_set_path(track_index, nodePath.get_concatenated_names() + ":text")
-	var last_field = caption_fields[caption_fields.size() - 1]
-	caption_fields.remove_at(caption_fields.size() - 1)
-	var written = ""
+	var animation := Animation.new()
+	var track_index := prepare_track(animation, data["Label"], Animation.UPDATE_DISCRETE)
+	var last_field = caption_fields.pop_back()
+	var written := ""
+	var text := ""
 	for caption in caption_fields:
-		var text = caption["text"] # The text being displayed.
+		text = caption["text"] # The text being displayed.
 		var start = caption["start"] # The starting keyframe in seconds.
 		var end = caption["end"] # The ending keyframe in seconds.
 		if text.find(" ") != -1: # Check for whitespaces.
-			var words = text.split(" ") # Get every word.
+			var words := text.split(" ") # Get every word.
 			var midpoint = end - start
 			var WPS = midpoint / words.size()
 			var wordFrequency = WPS
@@ -28,7 +32,7 @@ func generate_animation_WORDS(data, caption_fields):
 			written += text + " "
 			animation.track_insert_key(track_index, end, written)
 
-	var text = last_field["text"]
+	text = last_field["text"]
 	written += " "
 	
 	var duration
@@ -69,22 +73,19 @@ func generate_animation_WORDS(data, caption_fields):
 
 func generate_animation_LETTERS(data, caption_fields):
 	var animation = Animation.new()
-	var track_index = animation.add_track(Animation.TYPE_VALUE)
-	var nodePath = NodePath(data["Label"].owner.get_path_to(data["Label"]))
+	var track_index = prepare_track(animation, data["Label"], Animation.UPDATE_CONTINUOUS)
+	var last_field = caption_fields.pop_back()
 	var full_script = ""
-	animation.value_track_set_update_mode(track_index, Animation.UPDATE_CONTINUOUS)
-	animation.track_set_path(track_index, nodePath.get_concatenated_names() + ":text")
-	var last_field = caption_fields[caption_fields.size() - 1]
-	caption_fields.remove_at(caption_fields.size() - 1)
+	var text := ""
 	for caption in caption_fields:
-		var text = caption["text"] # The text being displayed.
+		text = caption["text"] # The text being displayed.
 		var start = caption["start"] # The starting keyframe in seconds.
 		var end = caption["end"] # The ending keyframe in seconds.
 		animation.track_insert_key(track_index, start, full_script)
 		full_script += text + " "
 		animation.track_insert_key(track_index, end, full_script)
 	
-	var text = last_field["text"]
+	text = last_field["text"]
 
 	animation.track_insert_key(track_index, last_field["start"], full_script)
 	full_script += last_field["text"]
