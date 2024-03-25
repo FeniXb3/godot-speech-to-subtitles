@@ -9,14 +9,14 @@ func _prepare_track(animation : Animation, node, update_mode : Animation.UpdateM
 	return track_index
 
 func _add_segment_word_by_word_to_track(written : String, caption, animation : Animation, track_index : int, end_override := 0.0) -> String:
-	var text := caption["text"] as String # The text being displayed.
-	var start := caption["start"] as float # The starting keyframe in seconds.
-	var end := caption["end"] as float if not end_override else end_override # The ending keyframe in seconds.
-	var words := text.split(" ") # Get every word.
+	var text : String = caption["text"]
+	var start : float = caption["start"]
+	var end : float = caption["end"] if not end_override else end_override
+	var words := text.split(" ")
 	var segment_duration := end - start
-	var word_duration = segment_duration / words.size()
+	var word_duration := segment_duration / words.size()
 
-	var currentTime = start
+	var currentTime := start
 	for word in words:
 		currentTime += word_duration
 		written += word + " "
@@ -24,10 +24,10 @@ func _add_segment_word_by_word_to_track(written : String, caption, animation : A
 		
 	return written
 
-func _generate_animation_WORDS(data : Dictionary, caption_fields) -> Animation:
+func _generate_animation_WORDS(data : Dictionary, caption_fields : Array[Dictionary]) -> Animation:
 	var animation := Animation.new()
 	var track_index := _prepare_track(animation, data["Label"], Animation.UPDATE_DISCRETE)
-	var last_field = caption_fields.pop_back()
+	var last_field : Dictionary = caption_fields.pop_back()
 	var written := ""
 	for caption in caption_fields:
 		written = _add_segment_word_by_word_to_track(written, caption, animation, track_index)
@@ -37,20 +37,21 @@ func _generate_animation_WORDS(data : Dictionary, caption_fields) -> Animation:
 	
 	animation.length = duration
 	
-	if "AnimationPlayer" in data and "Name" in data: # Adds the named animation to the provded animation player.
+	if "AnimationPlayer" in data and "Name" in data:
 		data["AnimationPlayer"].get_animation_library("").add_animation(data["Name"], animation)
 
 	return animation
 
-func _generate_animation_LETTERS(data, caption_fields) -> Animation:
+func _generate_animation_LETTERS(data : Dictionary, caption_fields) -> Animation:
 	var animation := Animation.new()
 	var track_index := _prepare_track(animation, data["Label"], Animation.UPDATE_CONTINUOUS)
 	var full_script := ""
 	var last_key_index : int = -1
 	for caption in caption_fields:
-		var text : String = caption["text"] # The text being displayed.
-		var start : float = caption["start"] # The starting keyframe in seconds.
-		var end : float = caption["end"] # The ending keyframe in seconds.
+		var text : String = caption["text"]
+		var start : float = caption["start"]
+		var end : float = caption["end"]
+
 		animation.track_insert_key(track_index, start, full_script)
 		full_script += text + " "
 		last_key_index = animation.track_insert_key(track_index, end, full_script)
@@ -60,21 +61,21 @@ func _generate_animation_LETTERS(data, caption_fields) -> Animation:
 	
 	animation.length = duration
 	
-	if "AnimationPlayer" in data and "Name" in data: # Adds the named animation to the provded animation player.
+	if "AnimationPlayer" in data and "Name" in data:
 		data["AnimationPlayer"].get_animation_library("").add_animation(data["Name"], animation)
 
 	return animation
 	
 func _generate_animation_subtitles(data : Dictionary, caption_fields) -> Animation:
 	var animation := Animation.new()
-	var track_index = _prepare_track(animation, data["Label"], Animation.UPDATE_DISCRETE)
+	var track_index := _prepare_track(animation, data["Label"], Animation.UPDATE_DISCRETE)
 	var has_container := data.has("Container")
 	var container_track_index := -1 if not has_container else _prepare_track(animation, data["Container"], Animation.UPDATE_DISCRETE, "visible")
 	print((data["AnimationPlayer"] as AnimationPlayer).root_node)
 	for caption in caption_fields:
-		var text = caption["text"]
-		var start = caption["start"]
-		var end = caption["end"]
+		var text : String = caption["text"]
+		var start : float = caption["start"]
+		var end : float = caption["end"]
 		
 		animation.track_insert_key(track_index, start, text)
 		animation.track_insert_key(track_index, end, "")
@@ -115,7 +116,7 @@ func read_and_parse(text_path : String) -> Array:
 
 	return caption_fields
 
-func generate_animation(data: Dictionary) -> Animation: # Creates and returns a label animation with the captions provided.
+func generate_animation(data: Dictionary) -> Animation:
 	var caption_fields := read_and_parse(data["TextPath"])
 
 	match data.get("Style", "letters").to_lower():
@@ -130,7 +131,7 @@ func _timestamp_to_seconds(timestamp : String) -> float:
 	var segments = timestamp.split(":")
 	return float(segments[0]) * 3600 + float(segments[1]) * 60 + float(segments[2].split(",")[0]) + float(segments[2].split(",")[1]) / 1000.0
 
-func get_complete_template():
+func get_complete_template() -> Dictionary:
 	var template = {"TextPath": "PATH TO .TXT FILE (REQUIRED)", # Required
 	"Label": "LABEL OR RICHTEXTLABEL NODE (REQUIRED)", # Required
 	"Name": "NEW ANIMATION NAME (OPTIONAL)", # Optional
@@ -141,6 +142,6 @@ func get_complete_template():
 	}
 	return template
 	
-func get_required_template():
+func get_required_template() -> Dictionary:
 	var template = {"TextPath": "PATH TO .TXT FILE (REQUIRED)", "LABEL": "LABEL OR RICHTEXTLABEL NODE (REQUIRED)"}
 	return template
