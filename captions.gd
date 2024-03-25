@@ -2,8 +2,7 @@ extends Node
 
 func _prepare_track(animation : Animation, node, update_mode : Animation.UpdateMode, property = "text") -> int:
 	var track_index := animation.add_track(Animation.TYPE_VALUE)
-	var owner = node.owner
-	var nodePath = NodePath(node.owner.get_path_to(node))
+	var nodePath := NodePath(node.owner.get_path_to(node))
 	animation.value_track_set_update_mode(track_index, update_mode)
 	animation.track_set_path(track_index, "%s:%s" % [nodePath.get_concatenated_names(), property])
 	
@@ -25,7 +24,7 @@ func _add_segment_word_by_word_to_track(written : String, caption, animation : A
 		
 	return written
 
-func _generate_animation_WORDS(data : Dictionary, caption_fields):
+func _generate_animation_WORDS(data : Dictionary, caption_fields) -> Animation:
 	var animation := Animation.new()
 	var track_index := _prepare_track(animation, data["Label"], Animation.UPDATE_DISCRETE)
 	var last_field = caption_fields.pop_back()
@@ -40,11 +39,10 @@ func _generate_animation_WORDS(data : Dictionary, caption_fields):
 	
 	if "AnimationPlayer" in data and "Name" in data: # Adds the named animation to the provded animation player.
 		data["AnimationPlayer"].get_animation_library("").add_animation(data["Name"], animation)
-		return true
-	else: # Returns the animation.
-		return animation
 
-func _generate_animation_LETTERS(data, caption_fields):
+	return animation
+
+func _generate_animation_LETTERS(data, caption_fields) -> Animation:
 	var animation := Animation.new()
 	var track_index = _prepare_track(animation, data["Label"], Animation.UPDATE_CONTINUOUS)
 	var last_field = caption_fields.pop_back()
@@ -71,9 +69,8 @@ func _generate_animation_LETTERS(data, caption_fields):
 	
 	if "AnimationPlayer" in data and "Name" in data: # Adds the named animation to the provded animation player.
 		data["AnimationPlayer"].get_animation_library("").add_animation(data["Name"], animation)
-		return true
-	else: # Returns the animation.
-		return animation
+
+	return animation
 
 func _parse_subtitles(content : String) -> Array:
 	var caption_fields := []	
@@ -100,7 +97,7 @@ func read_and_parse(text_path : String) -> Array:
 
 	return caption_fields
 
-func generate_animation(data: Dictionary): # Creates and returns a label animation with the captions provided.
+func generate_animation(data: Dictionary) -> Animation: # Creates and returns a label animation with the captions provided.
 	var caption_fields := read_and_parse(data["TextPath"])
 
 	match data.get("Style", "letters").to_lower():
