@@ -21,12 +21,30 @@ Create a Singleton for this script.
 
 ### Easy Usage
 
-```
+```gdscript
 var data = {"TextPath": "res://path_to_text_file.txt", "Label": label_or_richtextlabel_node} # Settings which will be passed as an argument.
-var animation = Captions.create(data) # Returns an Animation which can be used by AnimationPlayer to start showing the subtitles.
+var animation = Captions.generate_animation(data) # Returns an Animation which can be used by AnimationPlayer to start showing the subtitles.
 ```
 See example below.
-![Screenshot_89](https://github.com/1Othello/godot-speech-to-subtitles/assets/132980114/ef7b88f5-6220-4425-b976-7c8e03c963ba)
+
+```gdscript
+@onready var animation_player = %AnimationPlayer
+@onready var subtitle : RichTextLabel = %Subtitle
+@export var speech_player : AudioStreamPlayer
+
+func _ready():
+	var data = {
+		"TextPath": "res://text_file_format_example.txt", 
+		"Label": subtitle
+	} # Settings which will be passed as an argument.
+	var animation := Captions.generate_animation(data)
+  	animation_player.get_animation_library("").add_animation("display_subtitles", animation)
+	animation_player.play("display_subtitles")
+	if speech_player:
+		speech_player.play()
+
+```
+
 
 ### Moderate Usage
 
@@ -58,15 +76,31 @@ The rest are completely optional.
    - "Letter" makes it so that the all characters appear one by one to create a typewriter effect.
    - "Word" makes it so that all words appears one by one instead of characters.
 
-7. TimeOnly (Bool)
-   - False by default.
-   - Making this True will allow you to instead get an array of all the formatted timestamps.
-   - Example output: [{"text": "The world is mine!", "start": 0.0, "end": 1.0}]
+Example:
+```gdscript
+@onready var animation_player = %AnimationPlayer
+@onready var subtitle : RichTextLabel = %Subtitle
+@export var speech_player : AudioStreamPlayer
 
+func _ready():
+	var data = {
+		"TextPath": "res://text_file_format_example.txt", 
+		"Label": subtitle,
+		"AnimationPlayer": animation_player, 
+		"Name": "display_subtitles", 
+		"Style": "word",
+		"Duration": speech_player.stream.get_length()
+	} # Settings which will be passed as an argument.
+	Captions.generate_animation(data)
+	animation_player.play("display_subtitles")
+	if speech_player:
+		speech_player.play()
+
+```
 
 You can retrieve a template of the dictionary data needed directly from the singleton itself.
 
-```
+```gdscript
 var template = Captions.get_required_template() # Returns a dictionary with only the required keys.
 print(template)
 # Output {"TextPath": "PATH TO .TXT FILE (REQUIRED)", "LABEL": "LABEL OR RICHTEXTLABEL NODE (REQUIRED)"}
@@ -74,7 +108,7 @@ print(template)
 
 Or
 
-```
+```gdscript
 var template = Captions.get_complete_template() # Returns a dictionary with every key.
 print(template)
 # Output {"TextPath": "PATH TO .TXT FILE (REQUIRED)", # Required
@@ -83,8 +117,14 @@ print(template)
 #	"AnimationPlayer": "ANIMATIONPLAYER NODE (OPTIONAL)", # Optional
 #	"Duration": "AUDIO LENGTH (OPTIONAL)", # Optional
 #	"Style": "WORD OR LETTER (OPTIONAL)", # Optional
-#	"TimeOnly": "TRUE OR FALSE (OPTIONAL)" # Optional
 #	}
+```
+
+
+If you want to simply get parsed captions from the file or text input, call `read_and_parse` function:
+```gdscript
+var caption_fields := read_and_parse("res://text_file_format_example.txt")
+
 ```
 
 ## Creating an SRT file (Tutorial)
