@@ -75,8 +75,14 @@ The rest are completely optional.
    - The style in which subtitles will appear on the screen. (This is set to "Letter" by default. Although can be changed to "Word")
    - "Letter" makes it so that the all characters appear one by one to create a typewriter effect.
    - "Word" makes it so that all words appears one by one instead of characters.
+   - "Subtitles" makes it so that a segment is shown at the start time and hidden on the end time, like in video players.
+  
+7. Container (Node)
+   - Node containing the label
+   - It willbe made visible on start of the segment and hidden on the end of it
+   - Best to use with "subtitles" style
 
-Example:
+Examples:
 ```gdscript
 @onready var animation_player = %AnimationPlayer
 @onready var subtitle : RichTextLabel = %Subtitle
@@ -91,6 +97,35 @@ func _ready():
 		"Style": "word",
 		"Duration": speech_player.stream.get_length()
 	} # Settings which will be passed as an argument.
+	Captions.generate_animation(data)
+	animation_player.play("display_subtitles")
+	if speech_player:
+		speech_player.play()
+
+```
+
+```gdscript
+@onready var animation_player = %AnimationPlayer
+@onready var subtitle : RichTextLabel = %Subtitle
+@onready var external_margin_container = %ExternalMarginContainer
+@export var speech_player : AudioStreamPlayer
+
+func _ready():
+	var data = {
+		"TextPath": r"1
+00:00:01,440 --> 00:00:05,375
+Senator, we're making
+our final approach into Coruscant.
+
+2
+00:00:05,476 --> 00:00:07,501
+Very good, Lieutenant.", 
+		"Label": subtitle,
+		"AnimationPlayer": animation_player, 
+		"Name": "display_subtitles", 
+		"Style": "subtitles",
+		"Container": external_margin_container,
+	}
 	Captions.generate_animation(data)
 	animation_player.play("display_subtitles")
 	if speech_player:
