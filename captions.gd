@@ -44,26 +44,19 @@ func _generate_animation_WORDS(data : Dictionary, caption_fields) -> Animation:
 
 func _generate_animation_LETTERS(data, caption_fields) -> Animation:
 	var animation := Animation.new()
-	var track_index = _prepare_track(animation, data["Label"], Animation.UPDATE_CONTINUOUS)
-	var last_field = caption_fields.pop_back()
-	var full_script = ""
-	var text := ""
+	var track_index := _prepare_track(animation, data["Label"], Animation.UPDATE_CONTINUOUS)
+	var full_script := ""
+	var last_key_index : int = -1
 	for caption in caption_fields:
-		text = caption["text"] # The text being displayed.
-		var start = caption["start"] # The starting keyframe in seconds.
-		var end = caption["end"] # The ending keyframe in seconds.
+		var text : String = caption["text"] # The text being displayed.
+		var start : float = caption["start"] # The starting keyframe in seconds.
+		var end : float = caption["end"] # The ending keyframe in seconds.
 		animation.track_insert_key(track_index, start, full_script)
 		full_script += text + " "
-		animation.track_insert_key(track_index, end, full_script)
+		last_key_index = animation.track_insert_key(track_index, end, full_script)
 	
-	text = last_field["text"]
-
-	animation.track_insert_key(track_index, last_field["start"], full_script)
-	full_script += last_field["text"]
-		
-	var duration : float = data.get("Duration", last_field["end"]) 
-	
-	animation.track_insert_key(track_index, duration, full_script)
+	var duration : float = data.get("Duration", caption_fields.back()["end"])
+	animation.track_set_key_time(track_index, last_key_index, duration)
 	
 	animation.length = duration
 	
@@ -89,8 +82,7 @@ func read_and_parse(text_path : String) -> Array:
 	
 	if text_path.is_absolute_path():
 		var raw_file := FileAccess.open(text_path, FileAccess.READ)
-		var content := raw_file.get_as_text()
-		caption_fields = _parse_subtitles(content)
+		caption_fields = _parse_subtitles(raw_file.get_as_text())
 		raw_file.close()
 	else:
 		caption_fields = _parse_subtitles(text_path)
