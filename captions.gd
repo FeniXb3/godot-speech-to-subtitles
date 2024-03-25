@@ -85,10 +85,9 @@ func parse_subtitles(content : String) -> Array:
 		})
 	return caption_fields
 
-func create(data: Dictionary): # Creates and returns a label animation with the captions provided.
+func read_and_parse(text_path : String) -> Array:
 	var caption_fields := []
 	
-	var text_path : String = data["TextPath"]
 	if text_path.is_absolute_path():
 		var raw_file := FileAccess.open(text_path, FileAccess.READ)
 		var content := raw_file.get_as_text()
@@ -96,20 +95,21 @@ func create(data: Dictionary): # Creates and returns a label animation with the 
 		raw_file.close()
 	else:
 		caption_fields = parse_subtitles(text_path)
+
+	return caption_fields
+
+func create(data: Dictionary): # Creates and returns a label animation with the captions provided.
+	var caption_fields := read_and_parse(data["TextPath"])
 		
 	if "TimeOnly" in data and data["TimeOnly"]: # Returns caption fields without animating them.
 		return caption_fields
 	
-	if "Style" in data: # The style of the animation.
-		if data["Style"].to_lower() == "word":
-			var outcome = generate_animation_WORDS(data, caption_fields)
-			return outcome
-		else:
-			var outcome = generate_animation_LETTERS(data, caption_fields)
-			return outcome
-	else: # Uses LETTERS as default.
-		var outcome = generate_animation_LETTERS(data, caption_fields)
-		return outcome
+
+	match data.get("Style", "letters").to_lower():
+		"word":
+			return generate_animation_WORDS(data, caption_fields)
+		_:
+			return generate_animation_LETTERS(data, caption_fields)
 
 func timestamp_to_seconds(timestamp : String) -> float:
 	var segments = timestamp.split(":")
