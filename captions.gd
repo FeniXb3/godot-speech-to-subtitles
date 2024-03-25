@@ -64,6 +64,32 @@ func _generate_animation_LETTERS(data, caption_fields) -> Animation:
 		data["AnimationPlayer"].get_animation_library("").add_animation(data["Name"], animation)
 
 	return animation
+	
+func _generate_animation_subtitles(data : Dictionary, caption_fields) -> Animation:
+	var animation := Animation.new()
+	var track_index = _prepare_track(animation, data["Label"], Animation.UPDATE_DISCRETE)
+	var has_container := data.has("Container")
+	var container_track_index := -1 if not has_container else _prepare_track(animation, data["Container"], Animation.UPDATE_DISCRETE, "visible")
+	print((data["AnimationPlayer"] as AnimationPlayer).root_node)
+	for caption in caption_fields:
+		var text = caption["text"]
+		var start = caption["start"]
+		var end = caption["end"]
+		
+		animation.track_insert_key(track_index, start, text)
+		animation.track_insert_key(track_index, end, "")
+
+		if has_container:
+			animation.track_insert_key(container_track_index, start, true)
+			animation.track_insert_key(container_track_index, end, false)
+
+	var duration : float = data.get("Duration", caption_fields.back()["end"])
+	animation.length = duration
+	
+	if "AnimationPlayer" in data and "Name" in data: # Adds the named animation to the provded animation player.
+		data["AnimationPlayer"].get_animation_library("").add_animation(data["Name"], animation)
+	
+	return animation
 
 func _parse_subtitles(content : String) -> Array:
 	var caption_fields := []	
@@ -95,6 +121,8 @@ func generate_animation(data: Dictionary) -> Animation: # Creates and returns a 
 	match data.get("Style", "letters").to_lower():
 		"word":
 			return _generate_animation_WORDS(data, caption_fields)
+		"subtitles":
+			return _generate_animation_subtitles(data, caption_fields)
 		_:
 			return _generate_animation_LETTERS(data, caption_fields)
 
@@ -108,7 +136,8 @@ func get_complete_template():
 	"Name": "NEW ANIMATION NAME (OPTIONAL)", # Optional
 	"AnimationPlayer": "ANIMATIONPLAYER NODE (OPTIONAL)", # Optional
 	"Duration": "AUDIO LENGTH (OPTIONAL)", # Optional
-	"Style": "WORD OR LETTER (OPTIONAL)" # Optional
+	"Style": "WORD OR LETTER (OPTIONAL)", # Optional
+	"Container": "NODE CONTAINING THE LABEL TO BE ENABLED/DISABLED ON START/END OF EACH SEGMENT (OPTIONAL)" # Optional
 	}
 	return template
 	
